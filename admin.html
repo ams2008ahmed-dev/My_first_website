@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة الإدارة - نظام الإبلاغ المدرسي</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div id="loginSection" class="login-container">
+      <div class="header">
+        <h1>لوحة الإدارة</h1>
+        <a href="index.html" class="back-link">← العودة للقائمة الرئيسية</a>
+      </div>
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="password">كلمة المرور</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn-primary">دخول</button>
+      </form>
+    </div>
+
+    <div id="adminPanel" class="admin-panel" style="display: none;">
+      <div class="header">
+        <h1>لوحة الإدارة</h1>
+        <div class="admin-actions">
+          <button id="changePasswordBtn" class="btn-secondary">تغيير كلمة المرور</button>
+          <button id="logoutBtn" class="btn-secondary">تسجيل الخروج</button>
+        </div>
+      </div>
+
+      <div class="stats-container" id="statsContainer">
+        <div class="stat-card stat-problems">
+          <div class="stat-icon">🔧</div>
+          <div class="stat-info">
+            <div class="stat-number" id="totalProblems">0</div>
+            <div class="stat-label">إجمالي المشكلات</div>
+          </div>
+        </div>
+
+        <div class="stat-card stat-ideas">
+          <div class="stat-icon">💡</div>
+          <div class="stat-info">
+            <div class="stat-number" id="totalIdeas">0</div>
+            <div class="stat-label">إجمالي الأفكار</div>
+          </div>
+        </div>
+
+        <div class="stat-card stat-resolved">
+          <div class="stat-icon">✓</div>
+          <div class="stat-info">
+            <div class="stat-number" id="resolvedProblems">0</div>
+            <div class="stat-label">المشكلات المحلولة</div>
+          </div>
+        </div>
+
+        <div class="stat-card stat-pending">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-info">
+            <div class="stat-number" id="pendingProblems">0</div>
+            <div class="stat-label">المشكلات المعلقة</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="tab-btn active" data-filter="all">الكل</button>
+        <button class="tab-btn" data-filter="problem">المشاكل</button>
+        <button class="tab-btn" data-filter="idea">الأفكار</button>
+      </div>
+
+      <div id="adminReportsContainer" class="reports-grid">
+        <div class="loading">جاري التحميل...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="passwordModal" class="modal">
+    <div class="modal-content">
+      <h2>تغيير كلمة المرور</h2>
+      <form id="changePasswordForm">
+        <div class="form-group">
+          <label for="oldPassword">كلمة المرور القديمة</label>
+          <input type="password" id="oldPassword" required>
+        </div>
+        <div class="form-group">
+          <label for="newPassword">كلمة المرور الجديدة</label>
+          <input type="password" id="newPassword" required>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">حفظ</button>
+          <button type="button" class="btn-secondary" id="closeModal">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let allReports = [];
+    let currentFilter = 'all';
+    let isLoggedIn = false;
+
+    const loginSection = document.getElementById('loginSection');
+    const adminPanel = document.getElementById('adminPanel');
+    const loginForm = document.getElementById('loginForm');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    const passwordModal = document.getElementById('passwordModal');
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    const closeModal = document.getElementById('closeModal');
+
+    function initializeStorage() {
+      if (!localStorage.getItem('admin_password')) {
+        localStorage.setItem('admin_password', '0000');
+      }
+      if (!localStorage.getItem('reports')) {
+        localStorage.setItem('reports', JSON.stringify([]));
+      }
+    }
+
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      const storedPassword = localStorage.getItem('admin_password');
+
+      if (password === storedPassword) {
+        isLoggedIn = true;
+        loginSection.style.display = 'none';
+        adminPanel.style.display = 'block';
+        loadReports();
+      } else {
+        alert('كلمة المرور غير صحيحة');
+      }
+    });
+
+    logoutBtn.addEventListener('click', function() {
+      isLoggedIn = false;
+      loginSection.style.display = 'block';
+      adminPanel.style.display = 'none';
+      loginForm.reset();
+    });
+
+    changePasswordBtn.addEventListener('click', function() {
+      passwordModal.style.display = 'flex';
+    });
+
+    closeModal.addEventListener('click', function() {
+      passwordModal.style.display = 'none';
+      changePasswordForm.reset();
+    });
+
+    changePasswordForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const oldPassword = document.getElementById('oldPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const storedPassword = localStorage.getItem('admin_password');
+
+      if (oldPassword === storedPassword) {
+        localStorage.setItem('admin_password', newPassword);
+        alert('تم تغيير كلمة المرور بنجاح');
+        passwordModal.style.display = 'none';
+        changePasswordForm.reset();
+      } else {
+        alert('كلمة المرور القديمة غير صحيحة');
+      }
+    });
+
+    function loadStats() {
+      const reports = allReports;
+      const totalProblems = reports.filter(r => r.type === 'problem').length;
+      const totalIdeas = reports.filter(r => r.type === 'idea').length;
+      const resolvedProblems = reports.filter(r => r.type === 'problem' && r.is_resolved).length;
+      const pendingProblems = reports.filter(r => r.type === 'problem' && !r.is_resolved).length;
+
+      document.getElementById('totalProblems').textContent = totalProblems;
+      document.getElementById('totalIdeas').textContent = totalIdeas;
+      document.getElementById('resolvedProblems').textContent = resolvedProblems;
+      document.getElementById('pendingProblems').textContent = pendingProblems;
+    }
+
+    function loadReports() {
+      allReports = JSON.parse(localStorage.getItem('reports')) || [];
+      displayReports();
+      loadStats();
+    }
+
+    function displayReports() {
+      const container = document.getElementById('adminReportsContainer');
+      const filteredReports = currentFilter === 'all' 
+        ? allReports 
+        : allReports.filter(r => r.type === currentFilter);
+
+      if (filteredReports.length === 0) {
+        container.innerHTML = '<div class="empty-state">لا توجد بلاغات حالياً</div>';
+        return;
+      }
+
+      container.innerHTML = filteredReports.map(report => `
+        <div class="report-card ${report.type}">
+          <div class="report-header">
+            <span class="report-type">${report.type === 'problem' ? '🔧 مشكلة' : '💡 فكرة'}</span>
+            <div class="admin-controls">
+              <button class="icon-btn resolve-btn" data-id="${report.id}" data-resolved="${report.is_resolved}" title="${report.is_resolved ? 'إلغاء الحل' : 'وضع علامة كمحلول'}">
+                ${report.is_resolved ? '✓' : '○'}
+              </button>
+              <button class="icon-btn delete-btn" data-id="${report.id}" title="حذف">🗑️</button>
+            </div>
+          </div>
+          ${report.is_resolved ? '<div class="resolved-banner">تم الحل ✓</div>' : ''}
+          <div class="report-info">
+            <p><strong>الطالب:</strong> ${report.student_name}</p>
+            <p><strong>الصف:</strong> ${report.grade} - ${report.section}</p>
+          </div>
+          <div class="report-description">
+            <p>${report.description}</p>
+          </div>
+          ${report.solution_idea ? `
+            <div class="solution-idea">
+              <strong>اقتراح الحل:</strong>
+              <p>${report.solution_idea}</p>
+            </div>
+          ` : ''}
+          ${report.image_url ? `
+            <div class="report-image">
+              <img src="${report.image_url}" alt="صورة البلاغ">
+            </div>
+          ` : ''}
+          <div class="report-footer">
+            <small>${new Date(report.created_at).toLocaleString('ar-SA')}</small>
+          </div>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.resolve-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const id = parseInt(this.getAttribute('data-id'));
+          const reportIndex = allReports.findIndex(r => r.id === id);
+          
+          if (reportIndex !== -1) {
+            allReports[reportIndex].is_resolved = !allReports[reportIndex].is_resolved;
+            localStorage.setItem('reports', JSON.stringify(allReports));
+            loadReports();
+          }
+        });
+      });
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (!confirm('هل أنت متأكد من حذف هذا البلاغ؟')) return;
+
+          const id = parseInt(this.getAttribute('data-id'));
+          allReports = allReports.filter(r => r.id !== id);
+          localStorage.setItem('reports', JSON.stringify(allReports));
+          loadReports();
+        });
+      });
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.getAttribute('data-filter');
+        displayReports();
+      });
+    });
+
+    initializeStorage();
+    setInterval(() => {
+      if (isLoggedIn) loadReports();
+    }, 5000);
+  </script>
+</body>
+</html>
