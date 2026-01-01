@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تقديم بلاغ أو فكرة - نظام الإبلاغ المدرسي</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>تقديم بلاغ أو فكرة</h1>
+      <a href="index.html" class="back-link">← العودة للقائمة الرئيسية</a>
+    </div>
+
+    <div class="form-container">
+      <form id="reportForm">
+        <div class="form-group">
+          <label>نوع التقرير *</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="type" value="problem" checked>
+              <span>مشكلة</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="type" value="idea">
+              <span>فكرة</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="student_name">اسم الطالب *</label>
+            <input type="text" id="student_name" name="student_name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="grade">الصف الدراسي *</label>
+            <input type="text" id="grade" name="grade" placeholder="مثال: الثالث الثانوي" required>
+          </div>
+
+          <div class="form-group">
+            <label for="section">الشعبة *</label>
+            <input type="text" id="section" name="section" placeholder="مثال: أ" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">وصف المشكلة أو الفكرة *</label>
+          <textarea id="description" name="description" rows="5" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="solution_idea">اقتراح لحل المشكلة (اختياري)</label>
+          <textarea id="solution_idea" name="solution_idea" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="image">إرفاق صورة (اختياري)</label>
+          <input type="file" id="image" name="image" accept="image/*">
+          <div id="imagePreview" class="image-preview"></div>
+        </div>
+
+        <button type="submit" class="btn-primary">إرسال البلاغ</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('reportForm');
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+
+    imageInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        imagePreview.innerHTML = '';
+      }
+    });
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const type = form.querySelector('input[name="type"]:checked').value;
+      const student_name = document.getElementById('student_name').value;
+      const grade = document.getElementById('grade').value;
+      const section = document.getElementById('section').value;
+      const description = document.getElementById('description').value;
+      const solution_idea = document.getElementById('solution_idea').value;
+      
+      let image_url = null;
+      if (imageInput.files[0]) {
+        const reader = new FileReader();
+        image_url = await new Promise((resolve) => {
+          reader.onload = function(e) {
+            resolve(e.target.result);
+          };
+          reader.readAsDataURL(imageInput.files[0]);
+        });
+      }
+
+      const report = {
+        id: Date.now(),
+        type,
+        student_name,
+        grade,
+        section,
+        description,
+        solution_idea: solution_idea || null,
+        image_url,
+        is_resolved: false,
+        created_at: new Date().toISOString()
+      };
+
+      let reports = JSON.parse(localStorage.getItem('reports')) || [];
+      reports.push(report);
+      localStorage.setItem('reports', JSON.stringify(reports));
+
+      alert('تم إرسال البلاغ بنجاح!');
+      form.reset();
+      imagePreview.innerHTML = '';
+    });
+  </script>
+</body>
+</html>
