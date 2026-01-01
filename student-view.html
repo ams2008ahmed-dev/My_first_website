@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عرض البلاغات والأفكار - نظام الإبلاغ المدرسي</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>عرض البلاغات والأفكار</h1>
+      <a href="index.html" class="back-link">← العودة للقائمة الرئيسية</a>
+    </div>
+
+    <div class="filter-tabs">
+      <button class="tab-btn active" data-filter="all">الكل</button>
+      <button class="tab-btn" data-filter="problem">المشاكل</button>
+      <button class="tab-btn" data-filter="idea">الأفكار</button>
+    </div>
+
+    <div id="reportsContainer" class="reports-grid">
+      <div class="loading">جاري التحميل...</div>
+    </div>
+  </div>
+
+  <script>
+    let allReports = [];
+    let currentFilter = 'all';
+
+    function loadReports() {
+      allReports = JSON.parse(localStorage.getItem('reports')) || [];
+      displayReports();
+    }
+
+    function displayReports() {
+      const container = document.getElementById('reportsContainer');
+      const filteredReports = currentFilter === 'all' 
+        ? allReports 
+        : allReports.filter(r => r.type === currentFilter);
+
+      if (filteredReports.length === 0) {
+        container.innerHTML = '<div class="empty-state">لا توجد بلاغات حالياً</div>';
+        return;
+      }
+
+      container.innerHTML = filteredReports.map(report => `
+        <div class="report-card ${report.type}">
+          <div class="report-header">
+            <span class="report-type">${report.type === 'problem' ? '🔧 مشكلة' : '💡 فكرة'}</span>
+            ${report.is_resolved ? '<span class="resolved-badge">✓ تم الحل</span>' : ''}
+          </div>
+          <div class="report-info">
+            <p><strong>الطالب:</strong> ${report.student_name}</p>
+            <p><strong>الصف:</strong> ${report.grade} - ${report.section}</p>
+          </div>
+          <div class="report-description">
+            <p>${report.description}</p>
+          </div>
+          ${report.solution_idea ? `
+            <div class="solution-idea">
+              <strong>اقتراح الحل:</strong>
+              <p>${report.solution_idea}</p>
+            </div>
+          ` : ''}
+          ${report.image_url ? `
+            <div class="report-image">
+              <img src="${report.image_url}" alt="صورة البلاغ">
+            </div>
+          ` : ''}
+          <div class="report-footer">
+            <small>${new Date(report.created_at).toLocaleString('ar-SA')}</small>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.getAttribute('data-filter');
+        displayReports();
+      });
+    });
+
+    loadReports();
+    setInterval(loadReports, 5000);
+  </script>
+</body>
+</html>
