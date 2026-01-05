@@ -33,7 +33,61 @@
       </a>
     </div>
   </div>
+<section id="contact-section">
+  <h2>إرسال رسالة</h2>
+  <form id="msg-form">
+    <input type="text" id="name" placeholder="اسمك" required>
+    <textarea id="message" placeholder="رسالتك" required></textarea>
+    <button type="submit">إرسال</button>
+  </form>
+  <p id="status"></p>
+</section>
+<section id="messages-section">
+  <h2>الرسائل السابقة</h2>
+  <div id="messages-list">
+    <p>جارٍ تحميل الرسائل...</p>
+  </div>
+</section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
+  const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  async function loadMessages() {
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    const list = document.getElementById("messages-list");
+    list.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      list.innerHTML = "<p>لا توجد رسائل.</p>";
+      return;
+    }
+
+    data.forEach(msg => {
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${msg.name}</strong><br>${msg.message}<hr>`;
+      list.appendChild(div);
+    });
+  }
+
+  document.getElementById("msg-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = name.value;
+    const message = message.value;
+
+    await supabase.from("messages").insert([{ name, message }]);
+    loadMessages();
+    e.target.reset();
+  });
+
+  loadMessages();
+</script>
 <script>
   // إعداد اتصال Supabase
   const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
