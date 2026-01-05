@@ -35,13 +35,32 @@
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  // إعداد اتصال Supabase
   const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
   const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-  const supabase = window.supabase.createClient(
-    supabaseUrl,
-    supabaseKey
-  );
+  // التعامل مع إرسال النموذج
+  document.getElementById("msg-form").addEventListener("submit", async (e) => {
+    e.preventDefault(); // منع إعادة تحميل الصفحة
+
+    const name = document.getElementById("name").value;
+    const message = document.getElementById("message").value;
+
+    // إرسال البيانات إلى جدول messages
+    const { error } = await supabase
+      .from("messages")
+      .insert([{ name, message }]);
+
+    // عرض حالة الإرسال للمستخدم
+    document.getElementById("status").innerText =
+      error ? "حدث خطأ ❌" : "تم الإرسال بنجاح ✅";
+
+    // مسح النموذج بعد الإرسال الناجح
+    if (!error) {
+      document.getElementById("msg-form").reset();
+    }
+  });
 </script>
 </body>
 </html>
