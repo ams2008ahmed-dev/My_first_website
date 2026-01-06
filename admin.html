@@ -13,8 +13,16 @@
       <a href="index.html" class="back-link">← العودة للقائمة الرئيسية</a>
     </div>
 
-    <div class="reports-grid" id="adminReportsContainer">
-      <div class="loading">جاري التحميل...</div>
+    <div class="admin-controls">
+      <div class="filter-tabs">
+        <button class="tab-btn active" data-filter="all">الكل</button>
+        <button class="tab-btn" data-filter="problem">المشاكل</button>
+        <button class="tab-btn" data-filter="idea">الأفكار</button>
+      </div>
+
+      <div id="reportsContainer" class="reports-grid">
+        <div class="loading">جارٍ التحميل...</div>
+      </div>
     </div>
   </div>
 
@@ -24,29 +32,31 @@
     const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    async function loadAdminReports() {
+    let currentFilter = 'all';
+
+    async function loadReports() {
       const { data: reports, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
-      const container = document.getElementById('adminReportsContainer');
+      const container = document.getElementById('reportsContainer');
 
       if (error || !reports) {
         container.innerHTML = '<div class="empty-state">حدث خطأ أثناء جلب البلاغات ❌</div>';
-        console.error(error);
         return;
       }
 
-      if (reports.length === 0) {
+      const filteredReports = currentFilter === 'all'
+        ? reports
+        : reports.filter(r => r.type === currentFilter);
+
+      if (filteredReports.length === 0) {
         container.innerHTML = '<div class="empty-state">لا توجد بلاغات حالياً</div>';
         return;
       }
 
-      container.innerHTML = reports.map(r => `
+      container.innerHTML = filteredReports.map(r => `
         <div class="report-card ${r.type}">
           <div class="report-header">
             <span class="report-type">${r.type === 'problem' ? '🔧 مشكلة' : '💡 فكرة'}</span>
-            <select class="status-select" data-id="${r.id}">
-              <option value="open" ${r.status === 'open' ? 'selected' : ''}>مفتوح</option>
-              <option value="resolved" ${r.status === 'resolved' ? 'selected' : ''}>تم الحل</option>
-            </select>
+            ${r.status === 'resolved' ? '<span class="resolved-badge">✓ تم الحل</span>' : ''}
           </div>
           <div class="report-info">
             <p><strong>الطالب:</strong> ${r.student_name}</p>
@@ -55,27 +65,43 @@
           <div class="report-description"><p>${r.description}</p></div>
           ${r.solution_idea ? `<div class="solution-idea"><strong>اقتراح الحل:</strong><p>${r.solution_idea}</p></div>` : ''}
           ${r.image_url ? `<div class="report-image"><img src="${r.image_url}" alt="صورة البلاغ"></div>` : ''}
-          <div class="report-footer"><small>${new Date(r.created_at).toLocaleString('ar-SA')}</small></div>
+          <div class="report-footer">
+            <button class="btn-primary mark-resolved" data-id="${r.id}">وضع كـ تم الحل</button>
+            <button class="btn-danger delete-report" data-id="${r.id}">حذف البلاغ</button>
+            <small>${new Date(r.created_at).toLocaleString('ar-SA')}</small>
+          </div>
         </div>
       `).join('');
 
-      document.querySelectorAll('.status-select').forEach(select => {
-        select.addEventListener('change', async function() {
-          const id = this.dataset.id;
-          const status = this.value;
-          const { error } = await supabase.from('reports').update({ status }).eq('id', id);
-          if (error) {
-            alert('حدث خطأ أثناء تحديث الحالة ❌');
-            console.error(error);
-          } else {
-            loadAdminReports();
+      // أزرار الحل والحذف
+      document.querySelectorAll('.mark-resolved').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await supabase.from('reports').update({ status: 'resolved' }).eq('id', btn.dataset.id);
+          loadReports();
+        });
+      });
+
+      document.querySelectorAll('.delete-report').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (confirm('هل أنت متأكد من حذف البلاغ؟')) {
+            await supabase.from('reports').delete().eq('id', btn.dataset.id);
+            loadReports();
           }
         });
       });
     }
 
-    loadAdminReports();
-    setInterval(loadAdminReports, 5000);
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.getAttribute('data-filter');
+        loadReports();
+      });
+    });
+
+    loadReports();
+    setInterval(loadReports, 5000);
   </script>
 </body>
 </html>
