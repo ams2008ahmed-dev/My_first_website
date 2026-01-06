@@ -72,7 +72,7 @@
       </div>
 
       <div id="adminReportsContainer" class="reports-grid">
-        <div class="loading">جاري التحميل...</div>
+        <div class="loading">جارٍ التحميل...</div>
       </div>
     </div>
   </div>
@@ -237,7 +237,7 @@
         btn.addEventListener('click', function() {
           const id = parseInt(this.getAttribute('data-id'));
           const reportIndex = allReports.findIndex(r => r.id === id);
-          
+
           if (reportIndex !== -1) {
             allReports[reportIndex].is_resolved = !allReports[reportIndex].is_resolved;
             localStorage.setItem('reports', JSON.stringify(allReports));
