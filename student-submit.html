@@ -64,12 +64,13 @@
 
         <button type="submit" class="btn-primary">إرسال البلاغ</button>
       </form>
-      <p id="status" style="margin-top:15px; color:green;"></p>
+      <p id="status"></p>
     </div>
   </div>
 
   <!-- مكتبة Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
     const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
@@ -80,6 +81,7 @@
     const imagePreview = document.getElementById('imagePreview');
     const statusText = document.getElementById('status');
 
+    // معاينة الصورة
     imageInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -93,43 +95,45 @@
       }
     });
 
+    // إرسال البلاغ
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
 
       const type = form.querySelector('input[name="type"]:checked').value;
-      const student_name = document.getElementById("student_name").value;
-      const grade = document.getElementById("grade").value;
-      const section = document.getElementById("section").value;
-      const description = document.getElementById("description").value;
-      const solution_idea = document.getElementById("solution_idea").value;
+      const student_name = document.getElementById('student_name').value;
+      const grade = document.getElementById('grade').value;
+      const section = document.getElementById('section').value;
+      const description = document.getElementById('description').value;
+      const solution_idea = document.getElementById('solution_idea').value;
 
       let image_url = null;
       if (imageInput.files[0]) {
         const reader = new FileReader();
-        image_url = await new Promise(resolve => {
-          reader.onload = e => resolve(e.target.result);
+        image_url = await new Promise((resolve) => {
+          reader.onload = function(e) { resolve(e.target.result); };
           reader.readAsDataURL(imageInput.files[0]);
         });
       }
 
+      // إرسال البيانات إلى جدول "reports" في Supabase
       const { error } = await supabase.from("reports").insert([{
-        type,
         student_name,
         grade,
         section,
         description,
         solution_idea: solution_idea || null,
+        type,
         image_url,
-        is_resolved: false,
+        status: "open",
         created_at: new Date().toISOString()
       }]);
 
       if (error) {
-        statusText.style.color = "red";
         statusText.textContent = "حدث خطأ أثناء الإرسال ❌";
+        statusText.style.color = "red";
       } else {
-        statusText.style.color = "green";
         statusText.textContent = "تم إرسال البلاغ بنجاح ✅";
+        statusText.style.color = "green";
         form.reset();
         imagePreview.innerHTML = '';
       }
