@@ -20,7 +20,7 @@
     </div>
 
     <div id="reportsContainer" class="reports-grid">
-      <div class="loading">جاري التحميل...</div>
+      <div class="loading">جارٍ التحميل...</div>
     </div>
   </div>
 
@@ -38,11 +38,12 @@
 
       if (error || !reports) {
         container.innerHTML = '<div class="empty-state">حدث خطأ أثناء جلب البلاغات ❌</div>';
-        console.error(error);
         return;
       }
 
-      const filteredReports = currentFilter === 'all' ? reports : reports.filter(r => r.type === currentFilter);
+      const filteredReports = currentFilter === 'all'
+        ? reports
+        : reports.filter(r => r.type === currentFilter);
 
       if (filteredReports.length === 0) {
         container.innerHTML = '<div class="empty-state">لا توجد بلاغات حالياً</div>';
