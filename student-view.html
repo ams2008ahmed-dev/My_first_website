@@ -20,10 +20,11 @@
     </div>
 
     <div id="reportsContainer" class="reports-grid">
-      <div class="loading">جارٍ تحميل البلاغات...</div>
+      <div class="loading">جارٍ التحميل...</div>
     </div>
   </div>
 
+  <!-- مكتبة Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
@@ -34,9 +35,9 @@
 
     async function loadReports() {
       const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       const container = document.getElementById('reportsContainer');
       if (error || !data || data.length === 0) {
@@ -44,9 +45,12 @@
         return;
       }
 
-      const filtered = currentFilter === 'all' ? data : data.filter(r => r.type === currentFilter);
+      let filteredReports = data;
+      if (currentFilter !== 'all') {
+        filteredReports = data.filter(r => r.type === currentFilter);
+      }
 
-      container.innerHTML = filtered.map(report => `
+      container.innerHTML = filteredReports.map(report => `
         <div class="report-card ${report.type}">
           <div class="report-header">
             <span class="report-type">${report.type === 'problem' ? '🔧 مشكلة' : '💡 فكرة'}</span>
@@ -56,10 +60,23 @@
             <p><strong>الطالب:</strong> ${report.student_name}</p>
             <p><strong>الصف:</strong> ${report.grade} - ${report.section}</p>
           </div>
-          <div class="report-description"><p>${report.description}</p></div>
-          ${report.solution_idea ? `<div class="solution-idea"><strong>اقتراح الحل:</strong><p>${report.solution_idea}</p></div>` : ''}
-          ${report.image_url ? `<div class="report-image"><img src="${report.image_url}" alt="صورة البلاغ"></div>` : ''}
-          <div class="report-footer"><small>${new Date(report.created_at).toLocaleString('ar-SA')}</small></div>
+          <div class="report-description">
+            <p>${report.description}</p>
+          </div>
+          ${report.solution_idea ? `
+            <div class="solution-idea">
+              <strong>اقتراح الحل:</strong>
+              <p>${report.solution_idea}</p>
+            </div>
+          ` : ''}
+          ${report.image_url ? `
+            <div class="report-image">
+              <img src="${report.image_url}" alt="صورة البلاغ">
+            </div>
+          ` : ''}
+          <div class="report-footer">
+            <small>${new Date(report.created_at).toLocaleString('ar-SA')}</small>
+          </div>
         </div>
       `).join('');
     }
@@ -73,8 +90,9 @@
       });
     });
 
+    // تحديث دوري كل 5 ثواني
     loadReports();
-    setInterval(loadReports, 5000); // تحديث تلقائي كل 5 ثوانٍ
+    setInterval(loadReports, 5000);
   </script>
 </body>
 </html>
