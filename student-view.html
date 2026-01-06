@@ -20,31 +20,33 @@
     </div>
 
     <div id="reportsContainer" class="reports-grid">
-      <div class="loading">جاري التحميل...</div>
+      <div class="loading">جارٍ تحميل البلاغات...</div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    let allReports = [];
+    const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
+    const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     let currentFilter = 'all';
 
-    function loadReports() {
-      allReports = JSON.parse(localStorage.getItem('reports')) || [];
-      displayReports();
-    }
+    async function loadReports() {
+      const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    function displayReports() {
       const container = document.getElementById('reportsContainer');
-      const filteredReports = currentFilter === 'all' 
-        ? allReports 
-        : allReports.filter(r => r.type === currentFilter);
-
-      if (filteredReports.length === 0) {
+      if (error || !data || data.length === 0) {
         container.innerHTML = '<div class="empty-state">لا توجد بلاغات حالياً</div>';
         return;
       }
 
-      container.innerHTML = filteredReports.map(report => `
+      const filtered = currentFilter === 'all' ? data : data.filter(r => r.type === currentFilter);
+
+      container.innerHTML = filtered.map(report => `
         <div class="report-card ${report.type}">
           <div class="report-header">
             <span class="report-type">${report.type === 'problem' ? '🔧 مشكلة' : '💡 فكرة'}</span>
@@ -54,23 +56,10 @@
             <p><strong>الطالب:</strong> ${report.student_name}</p>
             <p><strong>الصف:</strong> ${report.grade} - ${report.section}</p>
           </div>
-          <div class="report-description">
-            <p>${report.description}</p>
-          </div>
-          ${report.solution_idea ? `
-            <div class="solution-idea">
-              <strong>اقتراح الحل:</strong>
-              <p>${report.solution_idea}</p>
-            </div>
-          ` : ''}
-          ${report.image_url ? `
-            <div class="report-image">
-              <img src="${report.image_url}" alt="صورة البلاغ">
-            </div>
-          ` : ''}
-          <div class="report-footer">
-            <small>${new Date(report.created_at).toLocaleString('ar-SA')}</small>
-          </div>
+          <div class="report-description"><p>${report.description}</p></div>
+          ${report.solution_idea ? `<div class="solution-idea"><strong>اقتراح الحل:</strong><p>${report.solution_idea}</p></div>` : ''}
+          ${report.image_url ? `<div class="report-image"><img src="${report.image_url}" alt="صورة البلاغ"></div>` : ''}
+          <div class="report-footer"><small>${new Date(report.created_at).toLocaleString('ar-SA')}</small></div>
         </div>
       `).join('');
     }
@@ -80,12 +69,12 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         currentFilter = this.getAttribute('data-filter');
-        displayReports();
+        loadReports();
       });
     });
 
     loadReports();
-    setInterval(loadReports, 5000);
+    setInterval(loadReports, 5000); // تحديث تلقائي كل 5 ثوانٍ
   </script>
 </body>
 </html>
