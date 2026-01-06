@@ -5,152 +5,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تقديم بلاغ أو فكرة - نظام الإبلاغ المدرسي</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* تنسيقات بسيطة للعرض */
-    .container { max-width: 800px; margin: auto; padding: 20px; }
-    .form-group { margin-bottom: 15px; }
-    .radio-group { display: flex; gap: 10px; }
-    .image-preview img { max-width: 200px; margin-top: 10px; }
-    .report-card { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; background: #f9f9f9; }
-  </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>تقديم بلاغ أو فكرة</h1>
-    <a href="index.html" class="back-link">← العودة للقائمة الرئيسية</a>
-  </div>
+  <div class="container">
+    <div class="header">
+      <h1>تقديم بلاغ أو فكرة</h1>
+      <a href="index.html" class="back-link">← العودة للقائمة الرئيسية</a>
+    </div>
 
-  <div class="form-container">
-    <form id="reportForm">
-      <div class="form-group">
-        <label>نوع التقرير *</label>
-        <div class="radio-group">
-          <label><input type="radio" name="type" value="problem" checked> مشكلة</label>
-          <label><input type="radio" name="type" value="idea"> فكرة</label>
+    <div class="form-container">
+      <form id="reportForm">
+        <div class="form-group">
+          <label>نوع التقرير *</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="type" value="problem" checked>
+              <span>مشكلة</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="type" value="idea">
+              <span>فكرة</span>
+            </label>
+          </div>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="student_name">اسم الطالب *</label>
-        <input type="text" id="student_name" name="student_name" required>
-      </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="student_name">اسم الطالب *</label>
+            <input type="text" id="student_name" name="student_name" required>
+          </div>
 
-      <div class="form-group">
-        <label for="grade">الصف الدراسي *</label>
-        <input type="text" id="grade" name="grade" placeholder="مثال: الثالث الثانوي" required>
-      </div>
+          <div class="form-group">
+            <label for="grade">الصف الدراسي *</label>
+            <input type="text" id="grade" name="grade" placeholder="مثال: الثالث الثانوي" required>
+          </div>
 
-      <div class="form-group">
-        <label for="section">الشعبة *</label>
-        <input type="text" id="section" name="section" placeholder="مثال: أ" required>
-      </div>
+          <div class="form-group">
+            <label for="section">الشعبة *</label>
+            <input type="text" id="section" name="section" placeholder="مثال: أ" required>
+          </div>
+        </div>
 
-      <div class="form-group">
-        <label for="description">وصف المشكلة أو الفكرة *</label>
-        <textarea id="description" name="description" rows="5" required></textarea>
-      </div>
+        <div class="form-group">
+          <label for="description">وصف المشكلة أو الفكرة *</label>
+          <textarea id="description" name="description" rows="5" required></textarea>
+        </div>
 
-      <div class="form-group">
-        <label for="solution_idea">اقتراح لحل المشكلة (اختياري)</label>
-        <textarea id="solution_idea" name="solution_idea" rows="3"></textarea>
-      </div>
+        <div class="form-group">
+          <label for="solution_idea">اقتراح لحل المشكلة (اختياري)</label>
+          <textarea id="solution_idea" name="solution_idea" rows="3"></textarea>
+        </div>
 
-      <div class="form-group">
-        <label for="image">إرفاق صورة (اختياري)</label>
-        <input type="file" id="image" name="image" accept="image/*">
-        <div id="imagePreview" class="image-preview"></div>
-      </div>
+        <div class="form-group">
+          <label for="image">إرفاق صورة (اختياري)</label>
+          <input type="file" id="image" name="image" accept="image/*">
+          <div id="imagePreview" class="image-preview"></div>
+        </div>
 
-      <button type="submit" class="btn-primary">إرسال البلاغ</button>
-    </form>
+        <button type="submit" class="btn-primary">إرسال البلاغ</button>
+      </form>
+      <p id="status" style="margin-top:15px; color:green;"></p>
+    </div>
   </div>
 
-  <h2>جميع البلاغات</h2>
-  <div id="reportsList"></div>
-</div>
+  <!-- مكتبة Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
+    const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
-  const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const form = document.getElementById('reportForm');
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+    const statusText = document.getElementById('status');
 
-  const form = document.getElementById('reportForm');
-  const imageInput = document.getElementById('image');
-  const imagePreview = document.getElementById('imagePreview');
+    imageInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        imagePreview.innerHTML = '';
+      }
+    });
 
-  // عرض صورة قبل الإرسال
-  imageInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if(file){
-      const reader = new FileReader();
-      reader.onload = ev => imagePreview.innerHTML = `<img src="${ev.target.result}">`;
-      reader.readAsDataURL(file);
-    } else { imagePreview.innerHTML = ''; }
-  });
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
 
-  // إرسال البلاغ إلى Supabase
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
+      const type = form.querySelector('input[name="type"]:checked').value;
+      const student_name = document.getElementById("student_name").value;
+      const grade = document.getElementById("grade").value;
+      const section = document.getElementById("section").value;
+      const description = document.getElementById("description").value;
+      const solution_idea = document.getElementById("solution_idea").value;
 
-    const student_name = document.getElementById('student_name').value;
-    const grade = document.getElementById('grade').value;
-    const section = document.getElementById('section').value;
-    const description = document.getElementById('description').value;
-    const solution_idea = document.getElementById('solution_idea').value;
-    const type = document.querySelector('input[name="type"]:checked').value;
+      let image_url = null;
+      if (imageInput.files[0]) {
+        const reader = new FileReader();
+        image_url = await new Promise(resolve => {
+          reader.onload = e => resolve(e.target.result);
+          reader.readAsDataURL(imageInput.files[0]);
+        });
+      }
 
-    // رفع الصورة كـ Base64
-    let image_url = null;
-    if(imageInput.files[0]){
-      const reader = new FileReader();
-      image_url = await new Promise(resolve => {
-        reader.onload = ev => resolve(ev.target.result);
-        reader.readAsDataURL(imageInput.files[0]);
-      });
-    }
+      const { error } = await supabase.from("reports").insert([{
+        type,
+        student_name,
+        grade,
+        section,
+        description,
+        solution_idea: solution_idea || null,
+        image_url,
+        is_resolved: false,
+        created_at: new Date().toISOString()
+      }]);
 
-    const { error } = await supabase.from("reports").insert([{
-      student_name,
-      grade,
-      section,
-      description,
-      solution_idea: solution_idea || null,
-      type,
-      status: "open",
-      image_url
-    }]);
-
-    if(error){
-      alert("حدث خطأ أثناء الإرسال ❌");
-      console.error(error);
-    } else {
-      alert("تم إرسال البلاغ بنجاح ✅");
-      form.reset();
-      imagePreview.innerHTML = '';
-      loadReports(); // إعادة تحميل البلاغات بعد الإرسال
-    }
-  });
-
-  // عرض كل البلاغات
-  async function loadReports(){
-    const { data: reports, error } = await supabase.from("reports").select("*").order("created_at",{ascending:false});
-    if(error){ console.error(error); return; }
-
-    const container = document.getElementById("reportsList");
-    container.innerHTML = reports.map(r => `
-      <div class="report-card">
-        <p><strong>الطالب:</strong> ${r.student_name} | <strong>الصف:</strong> ${r.grade} | <strong>الشعبة:</strong> ${r.section}</p>
-        <p><strong>الوصف:</strong> ${r.description}</p>
-        ${r.solution_idea ? `<p><strong>اقتراح:</strong> ${r.solution_idea}</p>` : ''}
-        ${r.image_url ? `<img src="${r.image_url}" alt="صورة مرفقة">` : ''}
-        <hr>
-      </div>
-    `).join('');
-  }
-
-  loadReports(); // تحميل البلاغات عند فتح الصفحة
-</script>
+      if (error) {
+        statusText.style.color = "red";
+        statusText.textContent = "حدث خطأ أثناء الإرسال ❌";
+      } else {
+        statusText.style.color = "green";
+        statusText.textContent = "تم إرسال البلاغ بنجاح ✅";
+        form.reset();
+        imagePreview.innerHTML = '';
+      }
+    });
+  </script>
 </body>
 </html>
