@@ -129,5 +129,37 @@
     });
   </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
+  const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  document.getElementById("report-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const student_name = document.getElementById("student_name").value;
+    const grade = document.getElementById("grade").value;
+    const section = document.getElementById("section").value;
+    const place = document.getElementById("place").value;
+    const description = document.getElementById("description").value;
+    const solution_idea = document.getElementById("solution_idea").value;
+
+    const { error } = await supabase.from("reports").insert([{
+      student_name,
+      grade,
+      section,
+      place,
+      description,
+      solution_idea,
+      type: "problem",
+      status: "open"
+    }]);
+
+    document.getElementById("status").innerText =
+      error ? "حدث خطأ أثناء الإرسال ❌" : "تم إرسال البلاغ بنجاح ✅";
+
+    if (!error) e.target.reset();
+  });
+</script>
 </body>
 </html>
