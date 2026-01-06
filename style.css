@@ -582,25 +582,25 @@ body {
   .header h1 {
     font-size: 1.8em;
   }
-  
+
   .menu-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .reports-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .admin-panel .header {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .admin-actions {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .admin-actions button {
     width: 100%;
   }
