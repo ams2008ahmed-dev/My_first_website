@@ -67,11 +67,19 @@
     </div>
   </div>
 
+  <!-- مكتبة Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
+    const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
+    const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     const form = document.getElementById('reportForm');
     const imageInput = document.getElementById('image');
     const imagePreview = document.getElementById('imagePreview');
 
+    // معاينة الصورة قبل الإرسال
     imageInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -85,81 +93,43 @@
       }
     });
 
+    // إرسال البلاغ
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      const type = form.querySelector('input[name="type"]:checked').value;
-      const student_name = document.getElementById('student_name').value;
-      const grade = document.getElementById('grade').value;
-      const section = document.getElementById('section').value;
-      const description = document.getElementById('description').value;
-      const solution_idea = document.getElementById('solution_idea').value;
-      
+      // تجهيز الصورة
       let image_url = null;
       if (imageInput.files[0]) {
         const reader = new FileReader();
-        image_url = await new Promise((resolve) => {
-          reader.onload = function(e) {
-            resolve(e.target.result);
-          };
+        image_url = await new Promise(resolve => {
+          reader.onload = e => resolve(e.target.result);
           reader.readAsDataURL(imageInput.files[0]);
         });
       }
 
       const report = {
-        id: Date.now(),
-        type,
-        student_name,
-        grade,
-        section,
-        description,
-        solution_idea: solution_idea || null,
+        type: document.querySelector('input[name="type"]:checked').value,
+        student_name: document.getElementById('student_name').value,
+        grade: document.getElementById('grade').value,
+        section: document.getElementById('section').value,
+        description: document.getElementById('description').value,
+        solution_idea: document.getElementById('solution_idea').value || null,
         image_url,
-        is_resolved: false,
-        created_at: new Date().toISOString()
+        is_resolved: false
       };
 
-      let reports = JSON.parse(localStorage.getItem('reports')) || [];
-      reports.push(report);
-      localStorage.setItem('reports', JSON.stringify(reports));
+      // إرسال للـ Supabase
+      const { error } = await supabase.from('reports').insert([report]);
 
-      alert('تم إرسال البلاغ بنجاح!');
-      form.reset();
-      imagePreview.innerHTML = '';
+      if (error) {
+        alert("حدث خطأ أثناء الإرسال ❌");
+        console.error(error);
+      } else {
+        alert("تم إرسال البلاغ بنجاح ✅");
+        form.reset();
+        imagePreview.innerHTML = "";
+      }
     });
   </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
-  const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-  document.getElementById("report-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const student_name = document.getElementById("student_name").value;
-    const grade = document.getElementById("grade").value;
-    const section = document.getElementById("section").value;
-    const place = document.getElementById("place").value;
-    const description = document.getElementById("description").value;
-    const solution_idea = document.getElementById("solution_idea").value;
-
-    const { error } = await supabase.from("reports").insert([{
-      student_name,
-      grade,
-      section,
-      place,
-      description,
-      solution_idea,
-      type: "problem",
-      status: "open"
-    }]);
-
-    document.getElementById("status").innerText =
-      error ? "حدث خطأ أثناء الإرسال ❌" : "تم إرسال البلاغ بنجاح ✅";
-
-    if (!error) e.target.reset();
-  });
-</script>
 </body>
 </html>
