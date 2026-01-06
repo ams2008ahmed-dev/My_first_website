@@ -1,32 +1,55 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+// script.js - إدارة البلاغات والأفكار للموقع
 
-const server = http.createServer((req, res) => {
-  let filePath = path.join(__dirname, 'public', req.url === '/' ? 'index.html' : req.url);
-  
-  const ext = path.extname(filePath);
-  let contentType = 'text/html';
-  
-  if (ext === '.css') contentType = 'text/css';
-  if (ext === '.js') contentType = 'text/javascript';
-  if (ext === '.json') contentType = 'application/json';
-  if (ext === '.png') contentType = 'image/png';
-  if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-  if (ext === '.gif') contentType = 'image/gif';
-  
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404);
-      res.end('Not Found');
+document.addEventListener("DOMContentLoaded", function () {
+  // جلب جميع البلاغات من التخزين المحلي
+  const reportsContainer = document.getElementById("reportsContainer");
+
+  function loadReports() {
+    const reports = JSON.parse(localStorage.getItem("reports")) || [];
+
+    if (!reportsContainer) return;
+
+    if (reports.length === 0) {
+      reportsContainer.innerHTML = '<p class="empty-state">لا توجد بلاغات حالياً</p>';
       return;
     }
-    
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(data);
-  });
-});
 
-server.listen(5000, '0.0.0.0', () => {
-  console.log('Server running on port 5000');
+    reportsContainer.innerHTML = reports
+      .map((report) => {
+        return `
+        <div class="report-card ${report.type}">
+          <div class="report-header">
+            <span class="report-type">${report.type === 'problem' ? '🔧 مشكلة' : '💡 فكرة'}</span>
+          </div>
+          <div class="report-info">
+            <p><strong>الطالب:</strong> ${report.student_name}</p>
+            <p><strong>الصف:</strong> ${report.grade} - ${report.section}</p>
+          </div>
+          <div class="report-description">
+            <p>${report.description}</p>
+          </div>
+          ${report.solution_idea ? `
+            <div class="solution-idea">
+              <strong>اقتراح الحل:</strong>
+              <p>${report.solution_idea}</p>
+            </div>
+          ` : ''}
+          ${report.image_url ? `
+            <div class="report-image">
+              <img src="${report.image_url}" alt="صورة البلاغ">
+            </div>
+          ` : ''}
+          <div class="report-footer">
+            <small>${new Date(report.created_at).toLocaleString('ar-SA')}</small>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+  }
+
+  loadReports();
+
+  // تحديث البلاغات كل 5 ثواني تلقائياً
+  setInterval(loadReports, 5000);
 });
