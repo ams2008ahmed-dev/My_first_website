@@ -20,41 +20,56 @@
     </div>
 
     <div id="reportsContainer" class="reports-grid">
-      <div class="loading">جارٍ التحميل...</div>
+      <div class="loading">جاري التحميل...</div>
     </div>
   </div>
 
   <!-- مكتبة Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
     const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+    let allReports = [];
     let currentFilter = 'all';
 
     async function loadReports() {
       const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("reports")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       const container = document.getElementById('reportsContainer');
-      if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-state">لا توجد بلاغات حالياً</div>';
+
+      if (error || !data) {
+        container.innerHTML = '<div class="empty-state">حدث خطأ أثناء جلب البلاغات</div>';
         return;
       }
 
-      let filteredReports = data;
-      if (currentFilter !== 'all') {
-        filteredReports = data.filter(r => r.type === currentFilter);
+      allReports = data;
+
+      displayReports();
+    }
+
+    function displayReports() {
+      const container = document.getElementById('reportsContainer');
+
+      const filteredReports = currentFilter === 'all' 
+        ? allReports 
+        : allReports.filter(r => r.type === currentFilter);
+
+      if (filteredReports.length === 0) {
+        container.innerHTML = '<div class="empty-state">لا توجد بلاغات حالياً</div>';
+        return;
       }
 
       container.innerHTML = filteredReports.map(report => `
         <div class="report-card ${report.type}">
           <div class="report-header">
             <span class="report-type">${report.type === 'problem' ? '🔧 مشكلة' : '💡 فكرة'}</span>
-            ${report.is_resolved ? '<span class="resolved-badge">✓ تم الحل</span>' : ''}
+            ${report.status === 'resolved' ? '<span class="resolved-badge">✓ تم الحل</span>' : ''}
           </div>
           <div class="report-info">
             <p><strong>الطالب:</strong> ${report.student_name}</p>
@@ -86,13 +101,12 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         currentFilter = this.getAttribute('data-filter');
-        loadReports();
+        displayReports();
       });
     });
 
-    // تحديث دوري كل 5 ثواني
     loadReports();
-    setInterval(loadReports, 5000);
+    setInterval(loadReports, 5000); // تحديث البلاغات كل 5 ثواني
   </script>
 </body>
 </html>
