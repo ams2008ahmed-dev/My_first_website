@@ -1,3 +1,4 @@
+alert("script.js يعمل");
 // الاتصال بـ Supabase
 const supabaseUrl = "https://lmoalkwfmemgtlyezpdo.supabase.co";
 const supabaseKey = "sb_publishable_ZpstGvn0ekVJlEzDXqlR7A_uzg16IUn";
